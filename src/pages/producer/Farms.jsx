@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { mockFarms } from '../../data/mockData'
+import { useData } from '../../context/DataContext'
+import { useToast } from '../../components/ui/Toast'
 import { Leaf, MapPin, Mountain, Plus, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 export default function Farms() {
-  const [farms, setFarms] = useState(mockFarms)
+  const { farms, addFarm, updateFarm, deleteFarm } = useData()
+  const { showToast, ToastComponent } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [editingFarm, setEditingFarm] = useState(null)
 
@@ -25,36 +27,37 @@ export default function Farms() {
 
   const onSubmit = (data) => {
     if (editingFarm) {
-      setFarms((prev) =>
-        prev.map((f) => (f.id === editingFarm.id ? { ...f, ...data } : f))
-      )
+      updateFarm(editingFarm.id, data)
+      showToast('Finca actualizada exitosamente.')
     } else {
-      setFarms((prev) => [
-        ...prev,
-        { ...data, id: Date.now(), batchCount: 0, hectares: Number(data.hectares), altitude: Number(data.altitude) },
-      ])
+      addFarm(data)
+      showToast('Finca registrada exitosamente.')
     }
     setShowForm(false)
     reset()
   }
 
   const handleDelete = (id) => {
-    if (window.confirm('¿Estás seguro de eliminar esta finca?')) {
-      setFarms((prev) => prev.filter((f) => f.id !== id))
+    if (window.confirm('¿Estás seguro de eliminar esta finca? También se eliminarán sus lotes asociados.')) {
+      deleteFarm(id)
+      showToast('Finca eliminada.', 'warning')
     }
   }
 
   return (
     <div className="space-y-6">
+      {ToastComponent}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mis Fincas</h1>
-          <p className="text-gray-500 mt-1">{farms.length} finca{farms.length !== 1 ? 's' : ''} registrada{farms.length !== 1 ? 's' : ''}</p>
+          <p className="text-gray-500 mt-1">
+            {farms.length} finca{farms.length !== 1 ? 's' : ''} registrada{farms.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-          <Plus size={16} />
-          Nueva finca
+          <Plus size={16} /> Nueva finca
         </button>
       </div>
 
@@ -136,6 +139,9 @@ export default function Farms() {
           <Leaf size={40} className="mx-auto text-gray-300 mb-3" />
           <p className="text-gray-500 font-medium">Aún no tienes fincas registradas</p>
           <p className="text-gray-400 text-sm mt-1">Haz clic en "Nueva finca" para comenzar</p>
+          <button onClick={openCreate} className="btn-primary mt-4">
+            + Registrar primera finca
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -166,7 +172,7 @@ export default function Farms() {
               <div className="space-y-1.5 mb-4">
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
                   <MapPin size={13} />
-                  {farm.municipality}, {farm.department}
+                  {[farm.municipality, farm.department].filter(Boolean).join(', ') || farm.location}
                 </div>
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
                   <Mountain size={13} />

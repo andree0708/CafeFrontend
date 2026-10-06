@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
-import { Coffee, AlertCircle } from 'lucide-react'
+import { Coffee, AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function Register() {
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
@@ -19,8 +20,31 @@ export default function Register() {
     await new Promise((r) => setTimeout(r, 700))
     const result = registerUser(data)
     setLoading(false)
+
     if (!result.success) return setError(result.message)
-    navigate('/dashboard')
+
+    // Show success message, then redirect after 2.5s
+    setSuccess(true)
+    setTimeout(() => navigate('/welcome'), 2500)
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-coffee-950 via-coffee-800 to-coffee-600 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-10 text-center max-w-sm w-full">
+          <div className="flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mx-auto mb-4">
+            <CheckCircle size={32} className="text-emerald-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">¡Cuenta creada exitosamente!</h2>
+          <p className="text-gray-500 text-sm mb-4">
+            Bienvenido al sistema. Serás redirigido a tu panel en un momento...
+          </p>
+          <div className="w-full bg-gray-100 rounded-full h-1.5">
+            <div className="bg-emerald-500 h-1.5 rounded-full animate-[progress_2.5s_linear_forwards]" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -37,7 +61,7 @@ export default function Register() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Registro</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Registro de productor</h2>
 
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-red-700 text-sm">
@@ -74,7 +98,7 @@ export default function Register() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
               <input
                 type="email"
-                placeholder="correo@ejemplo.com"
+                placeholder="correo@gmail.com"
                 className="input-field"
                 {...register('email', {
                   required: 'El correo es obligatorio',
@@ -137,6 +161,13 @@ export default function Register() {
               Inicia sesión
             </Link>
           </p>
+
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="text-xs text-blue-600">
+              <span className="font-medium">Nota:</span> Las nuevas cuentas son de tipo Productor. 
+              Si necesitas acceso de administrador, contacta al equipo de soporte.
+            </p>
+          </div>
         </div>
       </div>
     </div>
