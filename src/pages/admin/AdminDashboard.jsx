@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { mockAdminStats, mockAllProducers, mockBatches } from '../../data/mockData'
+import { useData } from '../../context/DataContext'
 import Badge from '../../components/ui/Badge'
 import {
   Users, Leaf, Package, BarChart2, TrendingUp,
@@ -50,6 +50,14 @@ const AdminStatCard = ({ title, value, subtitle, icon: Icon, color }) => {
 }
 
 export default function AdminDashboard() {
+  const { adminStats, allUsers, allBatches } = useData()
+
+  const qualityData = [
+    { name: 'Especialidad', value: allBatches.filter(b => b.prediction?.qualityCategory === 'SPECIALTY').length || 0, color: '#10b981' },
+    { name: 'Premium',      value: allBatches.filter(b => b.prediction?.qualityCategory === 'PREMIUM').length || 0,    color: '#3b82f6' },
+    { name: 'Comercial',    value: allBatches.filter(b => b.prediction?.qualityCategory === 'COMMERCIAL').length || 0, color: '#f59e0b' },
+    { name: 'Bajo grado',   value: allBatches.filter(b => b.prediction?.qualityCategory === 'LOW_GRADE').length || 0,  color: '#f87171' },
+  ].filter(d => d.value > 0)
   return (
     <div className="space-y-7">
       {/* Header */}
@@ -69,18 +77,12 @@ export default function AdminDashboard() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <AdminStatCard title="Productores" value={mockAdminStats.totalProducers} icon={Users} color="blue"
-          subtitle="Cuentas registradas" />
-        <AdminStatCard title="Fincas" value={mockAdminStats.totalFarms} icon={Leaf} color="green"
-          subtitle="En todo el sistema" />
-        <AdminStatCard title="Lotes totales" value={mockAdminStats.totalBatches} icon={Package} color="slate"
-          subtitle="Registrados" />
-        <AdminStatCard title="Predicciones IA" value={mockAdminStats.totalPredictions} icon={BarChart2} color="purple"
-          subtitle="Análisis realizados" />
-        <AdminStatCard title="% Especialidad" value={`${mockAdminStats.specialtyPercentage}%`} icon={TrendingUp} color="green"
-          subtitle="Del total analizado" />
-        <AdminStatCard title="Puntaje promedio" value={mockAdminStats.avgScoreGlobal} icon={CheckCircle} color="yellow"
-          subtitle="Escala SCA 0–100" />
+        <AdminStatCard title="Productores" value={adminStats.totalProducers} icon={Users} color="blue" subtitle="Cuentas registradas" />
+        <AdminStatCard title="Fincas" value={adminStats.totalFarms} icon={Leaf} color="green" subtitle="En todo el sistema" />
+        <AdminStatCard title="Lotes totales" value={adminStats.totalBatches} icon={Package} color="slate" subtitle="Registrados" />
+        <AdminStatCard title="Predicciones IA" value={adminStats.totalPredictions} icon={BarChart2} color="purple" subtitle="Análisis realizados" />
+        <AdminStatCard title="% Especialidad" value={`${adminStats.specialtyPercentage}%`} icon={TrendingUp} color="green" subtitle="Del total analizado" />
+        <AdminStatCard title="Puntaje promedio" value={adminStats.avgScoreGlobal || '—'} icon={CheckCircle} color="yellow" subtitle="Escala SCA 0–100" />
       </div>
 
       {/* Charts row */}
@@ -139,7 +141,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {mockAllProducers.map((p) => (
+              {allUsers.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-3.5">
                     <div className="flex items-center gap-3">
@@ -183,7 +185,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {mockBatches.filter((b) => b.prediction.status === 'DONE').map((b) => (
+              {allBatches.filter((b) => b.prediction?.status === 'DONE').slice(0, 5).map((b) => (
                 <tr key={b.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-3.5 font-medium text-sm text-slate-900">{b.code}</td>
                   <td className="px-6 py-3.5 text-sm text-slate-500">{b.farmName}</td>
