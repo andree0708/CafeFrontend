@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-
 import DashboardLayout from './components/layout/DashboardLayout'
 
 // Auth
@@ -22,18 +21,23 @@ import Predictions from './pages/producer/Predictions'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProducers from './pages/admin/AdminProducers'
+import AdminFarms from './pages/admin/AdminFarms'
+import AdminBatches from './pages/admin/AdminBatches'
+import AdminPredictions from './pages/admin/AdminPredictions'
+import AdminReports from './pages/admin/AdminReports'
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public routes */}
+        {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected routes — all share DashboardLayout + DataProvider */}
+        {/* Protected — all share DashboardLayout + DataProvider */}
         <Route element={<DashboardLayout />}>
-          {/* Welcome / onboarding */}
+          {/* Onboarding (producer only) */}
           <Route path="/welcome" element={<Welcome />} />
 
           {/* Producer */}
@@ -44,11 +48,16 @@ export default function App() {
           <Route path="/batches/:id" element={<BatchDetail />} />
           <Route path="/predictions" element={<Predictions />} />
 
-          {/* Settings */}
+          {/* Shared */}
           <Route path="/settings" element={<Settings />} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/producers" element={<AdminProducers />} />
+          <Route path="/admin/farms" element={<AdminFarms />} />
+          <Route path="/admin/batches" element={<AdminBatches />} />
+          <Route path="/admin/predictions" element={<AdminPredictions />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
         </Route>
 
         {/* Redirects */}

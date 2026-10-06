@@ -21,13 +21,18 @@ export default function Login() {
     const result = login(data.email, data.password)
     setLoading(false)
     if (!result.success) return setError(result.message)
-    // First-time demo users go to welcome, returning users go straight to dashboard
-    const isFirstLogin = !localStorage.getItem(`cafe_visited_${result.user.id}`)
-    if (isFirstLogin) {
-      localStorage.setItem(`cafe_visited_${result.user.id}`, 'true')
-      navigate('/welcome')
+    if (result.user.role === 'ADMIN') {
+      // Admin always goes straight to panel, no welcome screen
+      navigate('/admin')
     } else {
-      navigate(result.user.role === 'ADMIN' ? '/admin' : '/dashboard')
+      // Producer: welcome screen on first login only
+      const isFirstLogin = !localStorage.getItem(`cafe_visited_${result.user.id}`)
+      if (isFirstLogin) {
+        localStorage.setItem(`cafe_visited_${result.user.id}`, 'true')
+        navigate('/welcome')
+      } else {
+        navigate('/dashboard')
+      }
     }
   }
 
