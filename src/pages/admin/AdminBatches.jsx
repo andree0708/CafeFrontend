@@ -1,51 +1,45 @@
+import { Link } from 'react-router-dom'
 import { useData } from '../../context/DataContext'
 import Badge from '../../components/ui/Badge'
+import EmptyState from '../../components/ui/EmptyState'
 import { Package } from 'lucide-react'
+import { labelProcess, labelVariety } from '../../lib/labels'
 
 export default function AdminBatches() {
-  const { allBatches } = useData()
-
+  const { allBatches, loading } = useData()
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Lotes</h1>
-        <p className="text-slate-500 mt-1 text-sm">{allBatches.length} lotes registrados en el sistema</p>
+        <p className="page-kicker">Directorio</p>
+        <h1 className="page-title mt-2">Lotes</h1>
       </div>
-
-      {allBatches.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-100 text-center py-12">
-          <Package size={36} className="mx-auto text-slate-200 mb-2" />
-          <p className="text-slate-400 text-sm">No hay lotes registrados aún</p>
-        </div>
+      {loading ? <p className="text-stone-500">Cargando…</p> : allBatches.length === 0 ? (
+        <EmptyState icon={Package} title="Sin lotes" />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-          <table className="w-full">
+        <div className="card p-0 overflow-hidden">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {['Código', 'Finca', 'Variedad', 'Proceso', 'Puntaje', 'Categoría'].map((h) => (
-                  <th key={h} className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wide px-6 py-3">{h}</th>
+              <tr className="text-left border-b border-line">
+                {['Código', 'Finca', 'Variedad', 'Proceso', 'Puntaje', ''].map((h) => (
+                  <th key={h} className="px-5 py-3 page-kicker font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-line">
               {allBatches.map((b) => (
-                <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Package size={14} className="text-blue-400" />
-                      <span className="font-medium text-slate-900 text-sm">{b.code}</span>
+                <tr key={b.id}>
+                  <td className="px-5 py-3 font-medium">{b.code}</td>
+                  <td className="px-5 py-3 text-stone-600">{b.farmName}</td>
+                  <td className="px-5 py-3">{labelVariety(b.variety)}</td>
+                  <td className="px-5 py-3">{labelProcess(b.processingMethod)}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="font-display text-lg">{b.prediction?.predictedScore ?? '—'}</span>
+                      <Badge category={b.prediction?.qualityCategory || 'PENDING'} />
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{b.farmName || '—'}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{b.variety || '—'}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{b.processingMethod || '—'}</td>
-                  <td className="px-6 py-4">
-                    {b.prediction?.predictedScore
-                      ? <span className="text-sm font-bold text-slate-900">{b.prediction.predictedScore} pts</span>
-                      : <span className="text-sm text-slate-300">—</span>}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge category={b.prediction?.qualityCategory || 'PENDING'} />
+                  <td className="px-5 py-3 text-right">
+                    <Link to={`/batches/${b.id}`} className="underline underline-offset-4 text-xs">Ver</Link>
                   </td>
                 </tr>
               ))}

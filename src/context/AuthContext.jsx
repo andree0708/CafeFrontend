@@ -1,113 +1,105 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { api, displayName, setToken } from '../lib/api'
 
 const AuthContext = createContext(null)
 
-// Demo users — always available regardless of localStorage
-const MOCK_USERS = [
-  {
-    id: 1,
-    email: 'admin@cafeIA.com',
-    password: 'admin1234',
-    role: 'ADMIN',
-    name: 'Administrador',
-  },
-  {
-    id: 2,
-    email: 'productor@cafeIA.com',
-    password: 'productor1234',
-    role: 'PRODUCER',
-    name: 'Carlos Productor',
-    producer: { id: 1, firstName: 'Carlos', lastName: 'Gómez' },
-  },
-]
-
-// Registered users persisted in localStorage
-const loadRegisteredUsers = () => {
-  try {
-    const raw = localStorage.getItem('cafe_registered_users')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-const saveRegisteredUsers = (users) => {
-  try { localStorage.setItem('cafe_registered_users', JSON.stringify(users)) } catch { /* quota */ }
+const persistUser = (user) => {
+  if (user) localStorage.setItem('cafe_user', JSON.stringify(user))
+  else localStorage.removeItem('cafe_user')
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('cafe_user')
-    return stored ? JSON.parse(stored) : null
-  })
+  const [user, setUser] = useState(null)
+  const [ready, setReady] = useState(false)
 
-  const login = (email, password) => {
-    // Check demo users first
-    const demo = MOCK_USERS.find((u) => u.email === email && u.password === password)
-    if (demo) {
-      const { password: _, ...safeUser } = demo
-      setUser(safeUser)
-      localStorage.setItem('cafe_user', JSON.stringify(safeUser))
-      return { success: true, user: safeUser }
+  useEffect(() => {
+    const boot = async () => {
+      const token = localStorage.getItem('cafe_token')
+      if (!token) {
+        setReady(true)
+        return
+      }
+      try {
+        const res = await api.get('/api/auth/me')
+        const next = res.data.user
+        setUser(next)
+        persistUser(next)
+      } catch {
+        setToken(null)
+        persistUser(null)
+        setUser(null)
+      } finally {
+        setReady(true)
+      }
     }
+    boot()
+  }, [])
 
-    // Check registered users
-    const registered = loadRegisteredUsers()
-    const found = registered.find((u) => u.email === email && u.password === password)
-    if (!found) return { success: false, message: 'Correo o contraseña incorrectos.' }
-
-    const { password: _, ...safeUser } = found
-    setUser(safeUser)
-    localStorage.setItem('cafe_user', JSON.stringify(safeUser))
-    return { success: true, user: safeUser }
+  const login = async (email, password) => {
+    try {
+      const res = await api.post('/api/auth/login', { email, password })
+      setToken(res.data.token)
+      setUser(res.data.user)
+      persistUser(res.data.user)
+      return { success: true, user: res.data.user }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
   }
 
-  const register = (data) => {
-    const registered = loadRegisteredUsers()
-
-    // Check duplicate email across demo + registered
-    const allEmails = [...MOCK_USERS.map((u) => u.email), ...registered.map((u) => u.email)]
-    if (allEmails.includes(data.email)) {
-      return { success: false, message: 'Este correo ya está registrado.' }
-    }
-
-    const newUser = {
-      id: Date.now(),
-      email: data.email,
-      password: data.password, // stored only in localStorage mock
-      role: 'PRODUCER',
-      name: `${data.firstName} ${data.lastName}`,
-      producer: { id: Date.now(), firstName: data.firstName, lastName: data.lastName },
-    }
-
-    saveRegisteredUsers([...registered, newUser])
-
-    // Also add to cafe_users list so admin can see them
+  const register = async (data) => {
     try {
-      const rawUsers = localStorage.getItem('cafe_users')
-      const currentUsers = rawUsers ? JSON.parse(rawUsers) : []
-      const adminEntry = {
-        id: newUser.id,
+      const res = await api.post('/api/auth/register', {
+        email: data.email,
+        password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email,
-        farms: 0,
-        batches: 0,
-      }
-      localStorage.setItem('cafe_users', JSON.stringify([...currentUsers, adminEntry]))
-    } catch { /* quota */ }
+        phone: data.phone || undefined,
+        document: data.document || undefined,
+      })
+      setToken(res.data.token)
+      setUser(res.data.user)
+      persistUser(res.data.user)
+      return { success: true, user: res.data.user }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
+  }
 
-    const { password: _, ...safeUser } = newUser
-    setUser(safeUser)
-    localStorage.setItem('cafe_user', JSON.stringify(safeUser))
-    return { success: true, user: safeUser }
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await api.patch('/api/auth/change-password', { currentPassword, newPassword })
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
+  }
+
+  const updateProducer = async (producerId, payload) => {
+    try {
+      const res = await api.patch(`/api/producers/${producerId}`, payload)
+      const next = {
+        ...user,
+        producer: { ...user.producer, ...res.data.producer },
+      }
+      setUser(next)
+      persistUser(next)
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
   }
 
   const logout = () => {
+    setToken(null)
+    persistUser(null)
     setUser(null)
-    localStorage.removeItem('cafe_user')
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, ready, login, register, logout, changePassword, updateProducer, displayName: displayName(user) }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -1,161 +1,200 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { mockFarms, mockBatches, mockAllProducers } from '../data/mockData'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { api } from '../lib/api'
+import { mapBatch, mapFarm, mapProducer } from '../lib/labels'
 
 const DataContext = createContext(null)
 
-// ── localStorage helpers ───────────────────────────────────────────────────
-const load = (key, fallback) => {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-const save = (key, value) => {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* quota */ }
-}
-
-// ── Initial data setup ─────────────────────────────────────────────────────
-// On first load, seed localStorage with demo data so it persists across sessions
-const seedIfEmpty = () => {
-  if (!localStorage.getItem('cafe_seeded')) {
-    save('cafe_farms', mockFarms)
-    save('cafe_batches', mockBatches)
-    save('cafe_users', mockAllProducers)
-    localStorage.setItem('cafe_seeded', 'true')
-  }
-}
-
-seedIfEmpty()
-
 export function DataProvider({ children, user }) {
-  // ── Global shared state (persisted in localStorage) ──────────────────────
-  const [allFarms, setAllFarms] = useState(() => load('cafe_farms', mockFarms))
-  const [allBatches, setAllBatches] = useState(() => load('cafe_batches', mockBatches))
-  const [allUsers, setAllUsers] = useState(() => load('cafe_users', mockAllProducers))
+  const [allFarms, setAllFarms] = useState([])
+  const [allBatches, setAllBatches] = useState([])
+  const [allUsers, setAllUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Persist on every change
-  useEffect(() => { save('cafe_farms', allFarms) }, [allFarms])
-  useEffect(() => { save('cafe_batches', allBatches) }, [allBatches])
-  useEffect(() => { save('cafe_users', allUsers) }, [allUsers])
-
-  // ── Per-user filtered view (for PRODUCER role) ────────────────────────────
   const isAdmin = user?.role === 'ADMIN'
 
-  // Farms visible to current user
-  const farms = isAdmin
-    ? allFarms
-    : allFarms.filter((f) => f.ownerId === user?.id || f.ownerId === undefined)
+  const refresh = useCallback(async () => {
+    if (!user) return
+    setLoading(true)
+    setError('')
+    try {
+      const [farmsRes, batchesRes] = await Promise.all([
+        api.get('/api/farms'),
+        api.get('/api/batches'),
+      ])
+      const farms = (farmsRes.data.farms || []).map(mapFarm)
+      const batches = (batchesRes.data.batches || []).map(mapBatch)
+      setAllFarms(farms)
+      setAllBatches(batches)
 
-  // Batches visible to current user
-  const batches = isAdmin
-    ? allBatches
-    : allBatches.filter((b) => {
-        const farm = allFarms.find((f) => f.id === b.farmId)
-        return farm?.ownerId === user?.id || farm?.ownerId === undefined
-      })
-
-  // ── Farms CRUD ─────────────────────────────────────────────────────────────
-  const addFarm = (data) => {
-    const farm = {
-      ...data,
-      id: Date.now(),
-      batchCount: 0,
-      ownerId: user?.id,
-      ownerName: user?.name,
-      hectares: data.hectares ? Number(data.hectares) : null,
-      altitude: data.altitude ? Number(data.altitude) : null,
+      if (isAdmin) {
+        const prodRes = await api.get('/api/producers')
+        const producers = (prodRes.data.producers || []).map((p) => {
+          const mapped = mapProducer(p)
+          const farmIds = farms.filter((f) => f.producerId === p.id).map((f) => f.id)
+          return {
+            ...mapped,
+            farms: farms.filter((f) => f.producerId === p.id).length,
+            batches: batches.filter((b) => farmIds.includes(b.farmId)).length,
+          }
+        })
+        setAllUsers(producers)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-    setAllFarms((prev) => [...prev, farm])
-    return farm
+  }, [user, isAdmin])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const farms = allFarms
+  const batches = allBatches
+
+  const addFarm = async (data) => {
+    const res = await api.post('/api/farms', {
+      ...data,
+      hectares: data.hectares ? Number(data.hectares) : undefined,
+      altitude: data.altitude ? Number(data.altitude) : undefined,
+    })
+    await refresh()
+    return mapFarm(res.data.farm)
   }
 
-  const updateFarm = (id, data) => {
-    setAllFarms((prev) =>
-      prev.map((f) =>
-        f.id === id
-          ? {
-              ...f, ...data,
-              hectares: data.hectares ? Number(data.hectares) : f.hectares,
-              altitude: data.altitude ? Number(data.altitude) : f.altitude,
-            }
-          : f
-      )
-    )
+  const updateFarm = async (id, data) => {
+    await api.put(`/api/farms/${id}`, {
+      ...data,
+      hectares: data.hectares ? Number(data.hectares) : undefined,
+      altitude: data.altitude ? Number(data.altitude) : undefined,
+    })
+    await refresh()
   }
 
-  const deleteFarm = (id) => {
-    setAllFarms((prev) => prev.filter((f) => f.id !== id))
-    setAllBatches((prev) => prev.filter((b) => b.farmId !== id))
+  const deleteFarm = async (id) => {
+    await api.del(`/api/farms/${id}`)
+    await refresh()
   }
 
   const getFarmById = (id) => allFarms.find((f) => f.id === Number(id))
 
-  // ── Batches CRUD ───────────────────────────────────────────────────────────
-  const addBatch = (data) => {
-    const batch = {
-      ...data,
-      id: Date.now(),
-      weight: data.weight ? Number(data.weight) : null,
-      prediction: { status: 'PENDING', predictedScore: null, qualityCategory: null, confidenceLevel: null },
-    }
-    setAllBatches((prev) => [...prev, batch])
-    setAllFarms((prev) =>
-      prev.map((f) => (f.id === Number(data.farmId) ? { ...f, batchCount: (f.batchCount || 0) + 1 } : f))
-    )
-    return batch
+  const addBatch = async (data) => {
+    const res = await api.post(`/api/farms/${data.farmId}/batches`, {
+      code: data.code,
+      harvestDate: data.harvestDate,
+      processingMethod: data.processingMethod || undefined,
+      variety: data.variety || undefined,
+      weight: data.weight ? Number(data.weight) : undefined,
+      notes: data.notes || undefined,
+    })
+    await refresh()
+    return mapBatch(res.data.batch)
   }
 
   const getBatchById = (id) => allBatches.find((b) => b.id === Number(id))
   const getBatchesByFarm = (farmId) => allBatches.filter((b) => b.farmId === Number(farmId))
 
-  // ── Users (admin view) ─────────────────────────────────────────────────────
-  const registerUser = (userData) => {
-    const existing = allUsers.find((u) => u.email === userData.email)
-    if (existing) return
+  const fetchBatch = async (id) => {
+    const res = await api.get(`/api/batches/${id}`)
+    return mapBatch(res.data.batch)
+  }
 
-    const newUser = {
-      id: userData.id || Date.now(),
-      firstName: userData.firstName || userData.name?.split(' ')[0] || '',
-      lastName: userData.lastName || userData.name?.split(' ')[1] || '',
-      email: userData.email,
-      farms: 0,
-      batches: 0,
+  const saveVariables = async (batchId, data) => {
+    const payload = { ...data }
+    ;[
+      'avgTemperature', 'avgRainfall', 'avgHumidity', 'soilPH',
+      'soilOrganicMatter', 'soilNitrogen', 'dryingDays', 'storageMoisture',
+    ].forEach((key) => {
+      if (payload[key] === '' || payload[key] === undefined || payload[key] === null) delete payload[key]
+      else payload[key] = Number(payload[key])
+    })
+    ;['fertilizationFrequency', 'pestControlType', 'irrigationType', 'dryingMethod'].forEach((key) => {
+      if (!payload[key]) delete payload[key]
+    })
+    const res = await api.post(`/api/batches/${batchId}/variables`, payload)
+    await refresh()
+    return res.data.variables
+  }
+
+  const requestPrediction = async (batchId) => {
+    const res = await api.post(`/api/batches/${batchId}/prediction`)
+    await refresh()
+    return res.data
+  }
+
+  // ── Coffee Evaluation ──────────────────────────────────────────────────────
+  const fetchEvaluation = async (batchId) => {
+    const res = await api.get(`/api/batches/${batchId}/evaluation`)
+    return res.data.evaluation
+  }
+
+  const saveEvaluation = async (batchId, data) => {
+    // Convert all score fields to numbers, remove empty ones
+    const payload = {}
+    const scoreFields = [
+      'fragranceScore', 'flavorScore', 'aftertasteScore', 'acidityScore',
+      'bodyScore', 'balanceScore', 'uniformityScore', 'cleanCupScore',
+      'sweetnessScore', 'overallScore',
+    ]
+    scoreFields.forEach((k) => {
+      if (data[k] !== '' && data[k] != null) payload[k] = Number(data[k])
+    })
+    if (data.defects !== '' && data.defects != null) payload.defects = Number(data.defects)
+    if (data.evaluatorName) payload.evaluatorName = data.evaluatorName
+    if (data.evaluationDate) payload.evaluationDate = data.evaluationDate
+    if (data.notes) payload.notes = data.notes
+
+    const res = await api.post(`/api/batches/${batchId}/evaluation`, payload)
+    return res.data.evaluation
+  }
+
+  const deleteEvaluation = async (batchId) => {
+    await api.del(`/api/batches/${batchId}/evaluation`)
+  }
+
+  const adminStats = useMemo(() => {
+    const done = allBatches.filter((b) => b.prediction?.status === 'DONE')
+    return {
+      totalProducers: allUsers.length,
+      totalFarms: allFarms.length,
+      totalBatches: allBatches.length,
+      totalPredictions: done.length,
+      specialtyPercentage: allBatches.length
+        ? Math.round((allBatches.filter((b) => b.prediction?.qualityCategory === 'SPECIALTY').length / allBatches.length) * 100)
+        : 0,
+      avgScoreGlobal: done.length
+        ? (done.reduce((acc, b) => acc + (b.prediction.predictedScore || 0), 0) / done.length).toFixed(1)
+        : 0,
     }
-    setAllUsers((prev) => [...prev, newUser])
-  }
-
-  // Stats for admin dashboard
-  const adminStats = {
-    totalProducers: allUsers.length,
-    totalFarms: allFarms.length,
-    totalBatches: allBatches.length,
-    totalPredictions: allBatches.filter((b) => b.prediction?.status === 'DONE').length,
-    specialtyPercentage: allBatches.length > 0
-      ? Math.round(
-          (allBatches.filter((b) => b.prediction?.qualityCategory === 'SPECIALTY').length /
-            allBatches.length) * 100
-        )
-      : 0,
-    avgScoreGlobal: (() => {
-      const done = allBatches.filter((b) => b.prediction?.predictedScore)
-      if (!done.length) return 0
-      return (done.reduce((acc, b) => acc + b.prediction.predictedScore, 0) / done.length).toFixed(1)
-    })(),
-  }
+  }, [allUsers, allFarms, allBatches])
 
   return (
     <DataContext.Provider
       value={{
-        // Producer view (filtered)
-        farms, batches,
-        addFarm, updateFarm, deleteFarm, getFarmById,
-        addBatch, getBatchById, getBatchesByFarm,
-        // Admin view (global)
-        allFarms, allBatches, allUsers,
-        adminStats, registerUser,
+        loading,
+        error,
+        refresh,
+        farms,
+        batches,
+        addFarm,
+        updateFarm,
+        deleteFarm,
+        getFarmById,
+        addBatch,
+        getBatchById,
+        getBatchesByFarm,
+        fetchBatch,
+        saveVariables,
+        requestPrediction,
+        fetchEvaluation,
+        saveEvaluation,
+        deleteEvaluation,
+        allFarms,
+        allBatches,
+        allUsers,
+        adminStats,
       }}
     >
       {children}

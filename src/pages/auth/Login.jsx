@@ -2,13 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
-import { Eye, EyeOff, AlertCircle, Coffee, Leaf, BarChart2, Star } from 'lucide-react'
-
-const features = [
-  { icon: Leaf, text: 'Registra fincas y lotes' },
-  { icon: BarChart2, text: 'Predicción de calidad con IA' },
-  { icon: Star, text: 'Recomendaciones de comercialización' },
-]
+import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 export default function Login() {
   const { login } = useAuth()
@@ -16,22 +10,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data) => {
     setLoading(true)
     setError('')
-    await new Promise((r) => setTimeout(r, 500))
-    const result = login(data.email, data.password)
+    const result = await login(data.email, data.password)
     setLoading(false)
     if (!result.success) return setError(result.message)
-    if (result.user.role === 'ADMIN') {
-      navigate('/admin')
-    } else {
-      const isFirst = !localStorage.getItem(`cafe_visited_${result.user.id}`)
-      if (isFirst) {
-        localStorage.setItem(`cafe_visited_${result.user.id}`, 'true')
+    if (result.user.role === 'ADMIN') navigate('/admin')
+    else {
+      const key = `cafe_visited_${result.user.id}`
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, 'true')
         navigate('/welcome')
       } else {
         navigate('/dashboard')
@@ -40,135 +31,75 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-coffee-950 via-coffee-900 to-coffee-700 flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-white/10 rounded-xl">
-            <Coffee size={24} className="text-white" />
-          </div>
-          <span className="text-white font-bold text-xl">CaféIA</span>
-        </div>
-
+    <div className="min-h-screen grid lg:grid-cols-2 bg-paper">
+      <section className="hidden lg:flex flex-col justify-between p-14 bg-ink text-paper">
+        <p className="font-display text-3xl">CaféIA</p>
         <div>
-          <h1 className="text-4xl font-black text-white leading-tight mb-4">
-            Inteligencia artificial<br />
-            al servicio del<br />
-            <span className="text-coffee-300">café colombiano</span>
+          <p className="page-kicker text-paper/50">Sistema de calidad</p>
+          <h1 className="font-display text-5xl leading-[1.1] mt-4 text-paper">
+            Lectura de lote.<br />Decisión de mercado.
           </h1>
-          <p className="text-coffee-300 text-base mb-10 leading-relaxed">
-            Predice la calidad de tus lotes, mejora tus prácticas agrícolas
-            y accede a mejores mercados con datos reales.
+          <p className="mt-6 text-paper/70 max-w-md leading-relaxed">
+            Registra fincas y lotes, captura variables de producción y obtén un puntaje SCA estimado con un modelo de machine learning.
           </p>
-          <div className="space-y-3">
-            {features.map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                  <Icon size={15} className="text-coffee-300" />
-                </div>
-                <span className="text-coffee-200 text-sm">{text}</span>
-              </div>
-            ))}
-          </div>
         </div>
+        <p className="text-xs text-paper/40">Proyecto académico · café colombiano</p>
+      </section>
 
-        <p className="text-coffee-500 text-xs">Sistema Inteligente de Calidad Cafetera</p>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
+      <section className="flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <Coffee size={22} className="text-coffee-600" />
-            <span className="font-bold text-gray-900">CaféIA</span>
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Bienvenido</h2>
-          <p className="text-gray-400 text-sm mb-7">Ingresa con tu cuenta para continuar</p>
+          <p className="font-display text-2xl lg:hidden mb-8">CaféIA</p>
+          <p className="page-kicker">Acceso</p>
+          <h2 className="page-title mt-2 mb-8">Entrar</h2>
 
           {error && (
-            <div className="flex items-center gap-2.5 p-3 bg-red-50 border border-red-100 rounded-lg mb-5 text-red-600 text-sm">
-              <AlertCircle size={15} className="shrink-0" />
+            <div className="flex items-start gap-2 p-3 border border-red-200 bg-red-50 text-red-800 text-sm mb-5">
+              <AlertCircle size={15} className="mt-0.5 shrink-0" />
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Correo electrónico
-              </label>
+              <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Correo</label>
               <input
                 type="email"
-                autoComplete="email"
-                placeholder="correo@gmail.com"
                 className="input-field"
-                maxLength={100}
-                {...register('email', {
-                  required: 'El correo es obligatorio',
-                  pattern: { value: /^\S+@\S+\.\S+$/, message: 'Correo inválido' },
-                  maxLength: { value: 100, message: 'Máximo 100 caracteres' },
-                })}
+                placeholder="correo@finca.com"
+                {...register('email', { required: 'El correo es obligatorio' })}
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errors.email && <p className="text-red-700 text-xs mt-1">{errors.email.message}</p>}
             </div>
-
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-              </div>
+              <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Contraseña</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Tu contraseña"
                   className="input-field pr-10"
-                  maxLength={64}
-                  {...register('password', {
-                    required: 'La contraseña es obligatoria',
-                    maxLength: { value: 64, message: 'Máximo 64 caracteres' },
-                  })}
+                  {...register('password', { required: 'La contraseña es obligatoria' })}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  tabIndex={-1}
-                >
+                <button type="button" tabIndex={-1} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-2.5 mt-1"
-            >
-              {loading
-                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Ingresando...</span>
-                : 'Ingresar'}
+            <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
+              {loading ? 'Ingresando…' : 'Ingresar'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
-            ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-coffee-600 font-medium hover:underline">
-              Regístrate aquí
-            </Link>
+          <p className="text-sm text-stone-500 mt-6">
+            ¿Aún no tienes cuenta?{' '}
+            <Link to="/register" className="text-ink underline underline-offset-4">Regístrate</Link>
           </p>
 
-          <div className="mt-6 p-3.5 bg-amber-50 border border-amber-100 rounded-xl">
-            <p className="text-xs font-semibold text-amber-700 mb-2">Acceso demo:</p>
-            <div className="space-y-1 text-xs text-amber-600 font-mono">
-              <p>productor@cafeIA.com / productor1234</p>
-              <p>admin@cafeIA.com / admin1234</p>
-            </div>
+          <div className="mt-8 pt-6 border-t border-line text-xs text-stone-500 space-y-1">
+            <p className="uppercase tracking-wider text-[10px] mb-2">Cuentas de demostración</p>
+            <p>productor@cafeia.com · Productor1234</p>
+            <p>admin@cafeia.com · Admin1234</p>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

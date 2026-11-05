@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
-import { Coffee, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react'
+import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react'
 
 const passwordRules = [
   { label: 'Mínimo 8 caracteres', test: (v) => v?.length >= 8 },
-  { label: 'Una letra mayúscula', test: (v) => /[A-Z]/.test(v) },
-  { label: 'Una letra minúscula', test: (v) => /[a-z]/.test(v) },
+  { label: 'Una mayúscula', test: (v) => /[A-Z]/.test(v) },
+  { label: 'Una minúscula', test: (v) => /[a-z]/.test(v) },
   { label: 'Un número', test: (v) => /[0-9]/.test(v) },
 ]
 
@@ -18,218 +18,116 @@ export default function Register() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password', '')
 
   const onSubmit = async (data) => {
     setLoading(true)
     setError('')
-    await new Promise((r) => setTimeout(r, 700))
-    const result = registerUser(data)
+    const result = await registerUser(data)
     setLoading(false)
     if (!result.success) return setError(result.message)
     setSuccess(true)
-    setTimeout(() => navigate('/welcome'), 2500)
+    setTimeout(() => navigate('/welcome'), 1400)
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center max-w-sm w-full">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle size={32} className="text-emerald-500" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">¡Cuenta creada!</h2>
-          <p className="text-gray-400 text-sm mb-5">Te damos la bienvenida al sistema CaféIA.</p>
-          <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-1 bg-emerald-400 rounded-full animate-[progress_2.5s_linear_forwards]" />
-          </div>
+      <div className="min-h-screen bg-paper flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <CheckCircle size={28} className="mx-auto text-espresso mb-4" />
+          <h2 className="page-title">Cuenta lista</h2>
+          <p className="text-stone-500 mt-2">Te llevamos al laboratorio.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-coffee-950 via-coffee-900 to-coffee-700 flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-white/10 rounded-xl">
-            <Coffee size={24} className="text-white" />
-          </div>
-          <span className="text-white font-bold text-xl">CaféIA</span>
-        </div>
+    <div className="min-h-screen grid lg:grid-cols-[2fr,3fr] bg-paper">
+      <section className="hidden lg:flex flex-col justify-between p-14 bg-ink text-paper">
+        <p className="font-display text-3xl">CaféIA</p>
         <div>
-          <h2 className="text-3xl font-black text-white mb-3">Únete a la red<br />de productores</h2>
-          <p className="text-coffee-300 text-sm leading-relaxed">
-            Crea tu cuenta gratuita y empieza a analizar la calidad de tus lotes con inteligencia artificial.
-          </p>
+          <h2 className="font-display text-4xl leading-tight">Registro de productor</h2>
+          <p className="mt-4 text-paper/70 max-w-sm">Una cuenta por persona. Desde ahí administras fincas, lotes y análisis de calidad.</p>
         </div>
-        <p className="text-coffee-600 text-xs">Registro exclusivo para productores</p>
-      </div>
+        <p className="text-xs text-paper/40">Contraseña con mayúscula, minúscula y número</p>
+      </section>
 
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50 overflow-y-auto">
-        <div className="w-full max-w-md py-4">
-          <div className="flex items-center gap-2 mb-6 lg:hidden">
-            <Coffee size={20} className="text-coffee-600" />
-            <span className="font-bold text-gray-900">CaféIA</span>
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Crear cuenta</h2>
-          <p className="text-gray-400 text-sm mb-6">Registro de productor cafetero</p>
+      <section className="flex items-center justify-center p-8 overflow-y-auto">
+        <div className="w-full max-w-md py-6">
+          <p className="page-kicker">Nueva cuenta</p>
+          <h2 className="page-title mt-2 mb-8">Crear perfil</h2>
 
           {error && (
-            <div className="flex items-center gap-2.5 p-3 bg-red-50 border border-red-100 rounded-lg mb-4 text-red-600 text-sm">
-              <AlertCircle size={15} className="shrink-0" />
-              {error}
+            <div className="flex gap-2 p-3 border border-red-200 bg-red-50 text-red-800 text-sm mb-5">
+              <AlertCircle size={15} className="shrink-0 mt-0.5" /> {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                <input
-                  type="text"
-                  placeholder="Carlos"
-                  className="input-field"
-                  maxLength={50}
-                  {...register('firstName', {
-                    required: 'Requerido',
-                    minLength: { value: 2, message: 'Mínimo 2 caracteres' },
-                    maxLength: { value: 50, message: 'Máximo 50 caracteres' },
-                    pattern: { value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/, message: 'Solo letras' },
-                  })}
-                />
-                {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
+                <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Nombre</label>
+                <input className="input-field" {...register('firstName', { required: 'Requerido', minLength: 2, pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/ })} />
+                {errors.firstName && <p className="text-red-700 text-xs mt-1">Nombre inválido</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                <input
-                  type="text"
-                  placeholder="Gómez"
-                  className="input-field"
-                  maxLength={50}
-                  {...register('lastName', {
-                    required: 'Requerido',
-                    minLength: { value: 2, message: 'Mínimo 2 caracteres' },
-                    maxLength: { value: 50, message: 'Máximo 50 caracteres' },
-                    pattern: { value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/, message: 'Solo letras' },
-                  })}
-                />
-                {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
+                <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Apellido</label>
+                <input className="input-field" {...register('lastName', { required: 'Requerido', minLength: 2, pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/ })} />
+                {errors.lastName && <p className="text-red-700 text-xs mt-1">Apellido inválido</p>}
               </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-              <input
-                type="email"
-                autoComplete="email"
-                placeholder="correo@gmail.com"
-                className="input-field"
-                maxLength={100}
-                {...register('email', {
-                  required: 'El correo es obligatorio',
-                  pattern: { value: /^\S+@\S+\.\S+$/, message: 'Correo inválido' },
-                  maxLength: { value: 100, message: 'Máximo 100 caracteres' },
-                })}
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Correo</label>
+              <input type="email" className="input-field" {...register('email', { required: true, pattern: /^\S+@\S+\.\S+$/ })} />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono <span className="text-gray-400 font-normal">(opcional)</span></label>
-              <input
-                type="tel"
-                placeholder="+57 300 000 0000"
-                className="input-field"
-                maxLength={20}
-                {...register('phone')}
-              />
+              <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Teléfono (opcional)</label>
+              <input type="tel" className="input-field" placeholder="+57 300 000 0000" {...register('phone')} />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Contraseña</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  placeholder="Crea una contraseña segura"
                   className="input-field pr-10"
-                  maxLength={64}
                   {...register('password', {
-                    required: 'La contraseña es obligatoria',
-                    minLength: { value: 8, message: 'Mínimo 8 caracteres' },
-                    maxLength: { value: 64, message: 'Máximo 64 caracteres' },
+                    required: true,
+                    minLength: 8,
                     validate: {
-                      uppercase: (v) => /[A-Z]/.test(v) || 'Necesita al menos una mayúscula',
-                      lowercase: (v) => /[a-z]/.test(v) || 'Necesita al menos una minúscula',
-                      number: (v) => /[0-9]/.test(v) || 'Necesita al menos un número',
-                      noSpaces: (v) => !/\s/.test(v) || 'No puede contener espacios',
+                      uppercase: (v) => /[A-Z]/.test(v) || 'Mayúscula requerida',
+                      lowercase: (v) => /[a-z]/.test(v) || 'Minúscula requerida',
+                      number: (v) => /[0-9]/.test(v) || 'Número requerido',
                     },
                   })}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  tabIndex={-1}
-                >
+                <button type="button" tabIndex={-1} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {/* Password strength indicators */}
               {password && (
                 <div className="mt-2 grid grid-cols-2 gap-1">
                   {passwordRules.map((rule) => (
-                    <div key={rule.label} className={`flex items-center gap-1.5 text-xs ${rule.test(password) ? 'text-emerald-600' : 'text-gray-300'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${rule.test(password) ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                    <p key={rule.label} className={`text-xs ${rule.test(password) ? 'text-espresso' : 'text-stone-400'}`}>
                       {rule.label}
-                    </div>
+                    </p>
                   ))}
                 </div>
               )}
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
-              <input
-                type="password"
-                autoComplete="new-password"
-                placeholder="Repite tu contraseña"
-                className="input-field"
-                maxLength={64}
-                {...register('confirmPassword', {
-                  required: 'Confirma tu contraseña',
-                  validate: (v) => v === password || 'Las contraseñas no coinciden',
-                })}
-              />
-              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+              <label className="block text-xs uppercase tracking-wider text-stone-500 mb-1.5">Confirmar</label>
+              <input type="password" className="input-field" {...register('confirmPassword', { validate: (v) => v === password || 'No coinciden' })} />
+              {errors.confirmPassword && <p className="text-red-700 text-xs mt-1">{errors.confirmPassword.message}</p>}
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-2.5 mt-1"
-            >
-              {loading
-                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creando cuenta...</span>
-                : 'Crear cuenta'}
-            </button>
+            <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Creando…' : 'Crear cuenta'}</button>
           </form>
-
-          <p className="text-center text-sm text-gray-400 mt-5">
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-coffee-600 font-medium hover:underline">
-              Inicia sesión
-            </Link>
+          <p className="text-sm text-stone-500 mt-6">
+            ¿Ya tienes cuenta? <Link to="/login" className="text-ink underline underline-offset-4">Inicia sesión</Link>
           </p>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

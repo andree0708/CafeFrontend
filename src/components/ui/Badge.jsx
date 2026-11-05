@@ -3,7 +3,7 @@ const variants = {
   PREMIUM: 'badge-premium',
   COMMERCIAL: 'badge-commercial',
   LOW_GRADE: 'badge-low',
-  PENDING: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600',
+  PENDING: 'inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium tracking-wide bg-line text-ink',
 }
 
 const labels = {
