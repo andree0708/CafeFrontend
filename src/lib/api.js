@@ -14,6 +14,9 @@ const MESSAGES = {
   'Producer profile not found for this user.': 'Este usuario no tiene perfil de productor.',
   'Current password is incorrect.': 'La contraseña actual es incorrecta.',
   'You do not have permission to perform this action.': 'No tienes permiso para esta acción.',
+  'You do not have permission to access this batch.': 'No tienes permiso para ver este lote.',
+  'Request a model prediction for this batch first.': 'Solicita primero la predicción del modelo para este lote.',
+  'GROQ_API_KEY is not configured.': 'El análisis IA no está configurado en el servidor.',
   'Failed to fetch': 'No se pudo conectar con el servidor. ¿Está encendido el backend?',
 }
 

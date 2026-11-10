@@ -5,7 +5,7 @@ import { useData } from '../../context/DataContext'
 import { useToast } from '../../components/ui/Toast'
 import Badge from '../../components/ui/Badge'
 import ScoreSlider from '../../components/ui/ScoreSlider'
-import { ArrowLeft, FlaskConical, Zap, ChevronDown, ChevronUp, Trash2, History } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Zap, ChevronDown, ChevronUp, Trash2, History, Sparkles } from 'lucide-react'
 import {
   DRYING, IRRIGATION, PEST_CONTROL, SOIL_TYPES,
   formatDate, labelDrying, labelIrrigation, labelPest, labelSoil,
@@ -35,7 +35,7 @@ export default function BatchDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const {
-    fetchBatch, saveVariables, requestPrediction,
+    fetchBatch, saveVariables, requestPrediction, requestAiAnalysis,
     fetchEvaluation, saveEvaluation, deleteEvaluation,
   } = useData()
   const { showToast, ToastComponent } = useToast()
@@ -45,6 +45,8 @@ export default function BatchDetail() {
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [predicting, setPred]   = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysis, setAnalysis]   = useState(null)
   const [savingEval, setSavingEval] = useState(false)
   const [showEval, setShowEval] = useState(false)
 
@@ -126,6 +128,19 @@ export default function BatchDetail() {
       showToast(err.message, 'error')
     } finally {
       setPred(false)
+    }
+  }
+
+  const onAiAnalysis = async () => {
+    setAnalyzing(true)
+    try {
+      const data = await requestAiAnalysis(batch.id)
+      setAnalysis(data)
+      showToast('Análisis IA generado.')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setAnalyzing(false)
     }
   }
 
@@ -474,6 +489,40 @@ export default function BatchDetail() {
           />
 
           <MarketBars marketFits={batch.marketFits} />
+
+          {prediction?.status === 'DONE' && (
+            <div className="card space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={15} className="text-espresso" />
+                <h3 className="font-display text-lg">Análisis IA</h3>
+              </div>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Generado con Groq a partir del puntaje, los factores SHAP, los mercados y la cata.
+              </p>
+              {analysis?.analysis ? (
+                <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-line">{analysis.analysis}</p>
+              ) : (
+                <button
+                  onClick={onAiAnalysis}
+                  disabled={analyzing}
+                  className="w-full bg-espresso/10 hover:bg-espresso/20 text-espresso text-sm py-2.5 rounded-md transition-colors disabled:opacity-50"
+                >
+                  {analyzing
+                    ? <span className="flex items-center justify-center gap-2"><span className="w-3 h-3 border-2 border-espresso/20 border-t-espresso rounded-full animate-spin" /> Generando…</span>
+                    : <span className="flex items-center justify-center gap-1.5"><Sparkles size={13} /> Generar análisis IA</span>}
+                </button>
+              )}
+              {analysis?.analysis && (
+                <button
+                  onClick={onAiAnalysis}
+                  disabled={analyzing}
+                  className="text-xs text-stone-400 hover:text-espresso transition-colors disabled:opacity-50"
+                >
+                  {analyzing ? 'Generando…' : 'Regenerar'}
+                </button>
+              )}
+            </div>
+          )}
 
           {batch.predictionRuns?.length > 1 && (
             <div className="card space-y-3">

@@ -149,6 +149,11 @@ export function DataProvider({ children, user }) {
     return res.data
   }
 
+  const requestAiAnalysis = async (batchId) => {
+    const res = await api.post(`/api/batches/${batchId}/ai-analysis`)
+    return res.data
+  }
+
   // ── Coffee Evaluation ──────────────────────────────────────────────────────
   const fetchEvaluation = async (batchId) => {
     const res = await api.get(`/api/batches/${batchId}/evaluation`)
@@ -217,6 +222,7 @@ export function DataProvider({ children, user }) {
         fetchPredictionHistory,
         fetchMarketFits,
         fetchAiStatus,
+        requestAiAnalysis,
         fetchEvaluation,
         saveEvaluation,
         deleteEvaluation,
