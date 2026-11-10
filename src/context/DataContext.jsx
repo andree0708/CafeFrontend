@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api'
-import { mapBatch, mapFarm, mapProducer } from '../lib/labels'
+import { mapBatch, mapFarm, mapProducer, normalizePrediction, normalizeRun } from '../lib/labels'
 
 const DataContext = createContext(null)
 
@@ -106,11 +106,12 @@ export function DataProvider({ children, user }) {
     ;[
       'avgTemperature', 'avgRainfall', 'avgHumidity', 'soilPH',
       'soilOrganicMatter', 'soilNitrogen', 'dryingDays', 'storageMoisture',
+      'fermentationHours',
     ].forEach((key) => {
       if (payload[key] === '' || payload[key] === undefined || payload[key] === null) delete payload[key]
       else payload[key] = Number(payload[key])
     })
-    ;['fertilizationFrequency', 'pestControlType', 'irrigationType', 'dryingMethod'].forEach((key) => {
+    ;['fertilizationFrequency', 'pestControlType', 'irrigationType', 'dryingMethod', 'soilType'].forEach((key) => {
       if (!payload[key]) delete payload[key]
     })
     const res = await api.post(`/api/batches/${batchId}/variables`, payload)
@@ -121,6 +122,30 @@ export function DataProvider({ children, user }) {
   const requestPrediction = async (batchId) => {
     const res = await api.post(`/api/batches/${batchId}/prediction`)
     await refresh()
+    return res.data
+  }
+
+  const fetchPrediction = async (batchId) => {
+    const res = await api.get(`/api/batches/${batchId}/prediction`)
+    return {
+      prediction: normalizePrediction(res.data.prediction),
+      marketFits: res.data.marketFits || [],
+      history: (res.data.history || []).map(normalizeRun),
+    }
+  }
+
+  const fetchPredictionHistory = async (batchId) => {
+    const res = await api.get(`/api/batches/${batchId}/prediction/history`)
+    return (res.data.history || []).map(normalizeRun)
+  }
+
+  const fetchMarketFits = async (batchId) => {
+    const res = await api.get(`/api/batches/${batchId}/markets`)
+    return res.data.marketFits || []
+  }
+
+  const fetchAiStatus = async () => {
+    const res = await api.get('/api/ai/status')
     return res.data
   }
 
@@ -188,6 +213,10 @@ export function DataProvider({ children, user }) {
         fetchBatch,
         saveVariables,
         requestPrediction,
+        fetchPrediction,
+        fetchPredictionHistory,
+        fetchMarketFits,
+        fetchAiStatus,
         fetchEvaluation,
         saveEvaluation,
         deleteEvaluation,

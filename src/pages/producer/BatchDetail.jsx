@@ -5,12 +5,15 @@ import { useData } from '../../context/DataContext'
 import { useToast } from '../../components/ui/Toast'
 import Badge from '../../components/ui/Badge'
 import ScoreSlider from '../../components/ui/ScoreSlider'
-import { ArrowLeft, FlaskConical, Zap, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Zap, ChevronDown, ChevronUp, Trash2, History } from 'lucide-react'
 import {
-  DRYING, IRRIGATION, PEST_CONTROL,
-  formatDate, labelDrying, labelIrrigation, labelPest,
+  DRYING, IRRIGATION, PEST_CONTROL, SOIL_TYPES,
+  formatDate, labelDrying, labelIrrigation, labelPest, labelSoil,
   labelProcess, labelVariety, dateInputValue,
 } from '../../lib/labels'
+import FactorBars from '../../components/ui/FactorBars'
+import MarketBars from '../../components/ui/MarketBars'
+import FallbackNotice from '../../components/ui/FallbackNotice'
 
 const PRIORITY  = { high: 'Alta', medium: 'Media', low: 'Baja' }
 const REC_CAT   = { commercialization: 'Mercado', processing: 'Poscosecha', agronomic: 'Agronomía' }
@@ -220,6 +223,12 @@ export default function BatchDetail() {
                 <VarField label="Nitrógeno" hint="0 a 100">
                   <input type="number" step="0.1" min="0" max="100" className="input-field" {...varsForm.register('soilNitrogen')} />
                 </VarField>
+                <VarField label="Tipo de suelo">
+                  <select className="input-field" {...varsForm.register('soilType')}>
+                    <option value="">—</option>
+                    {SOIL_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </VarField>
               </div>
             </section>
 
@@ -261,6 +270,9 @@ export default function BatchDetail() {
                 <VarField label="Humedad almacenamiento (%)" hint="≤ 12 recomendado">
                   <input type="number" step="0.1" min="0" max="100" className="input-field" {...varsForm.register('storageMoisture')} />
                 </VarField>
+                <VarField label="Horas de fermentación" hint="12 a 72 h recomendado">
+                  <input type="number" step="1" min="0" max="240" className="input-field" {...varsForm.register('fermentationHours')} />
+                </VarField>
               </div>
             </section>
 
@@ -271,6 +283,8 @@ export default function BatchDetail() {
                 {batch.productionVariables.irrigationType && <span>· Riego: {labelIrrigation(batch.productionVariables.irrigationType)}</span>}
                 {batch.productionVariables.pestControlType && <span>· Plagas: {labelPest(batch.productionVariables.pestControlType)}</span>}
                 {batch.productionVariables.soilPH && <span>· pH: {batch.productionVariables.soilPH}</span>}
+                {batch.productionVariables.soilType && <span>· Suelo: {labelSoil(batch.productionVariables.soilType)}</span>}
+                {batch.productionVariables.fermentationHours != null && <span>· Fermentación: {batch.productionVariables.fermentationHours} h</span>}
               </div>
             )}
 
@@ -450,6 +464,44 @@ export default function BatchDetail() {
               </>
             )}
           </div>
+
+          <FallbackNotice prediction={prediction} />
+
+          <FactorBars
+            factors={prediction?.topFactors}
+            baseline={prediction?.baselineScore ?? prediction?.rawOutput?.baselineScore}
+            method={prediction?.explanationMethod}
+          />
+
+          <MarketBars marketFits={batch.marketFits} />
+
+          {batch.predictionRuns?.length > 1 && (
+            <div className="card space-y-3">
+              <div className="flex items-center gap-2">
+                <History size={15} className="text-stone-400" />
+                <h3 className="font-display text-lg">Historial de análisis</h3>
+              </div>
+              <div className="divide-y divide-line">
+                {batch.predictionRuns.map((run) => (
+                  <div key={run.id} className="flex items-center justify-between gap-3 py-2 text-xs">
+                    <div className="min-w-0">
+                      <p className="text-stone-500 truncate">
+                        {new Date(run.createdAt).toLocaleString('es-CO')}
+                      </p>
+                      <p className="text-[10px] text-stone-400">
+                        {run.modelVersion || '—'}
+                        {run.usedFallback ? ' · respaldo' : ''}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-display text-base text-ink">{run.predictedScore}</span>
+                      <Badge category={run.qualityCategory || 'PENDING'} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Cupping score comparison */}
           {evaluation?.totalScore && prediction?.predictedScore && (
