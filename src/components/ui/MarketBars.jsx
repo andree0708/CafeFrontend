@@ -1,4 +1,4 @@
-import { labelMarket, labelOpportunity } from '../../lib/labels'
+import { labelMarket, labelOpportunity, opportunityLevelForScore } from '../../lib/labels'
 
 const TONES = {
   high: 'bg-emerald-600',
@@ -32,7 +32,7 @@ export default function MarketBars({ marketFits = [], title = 'Oportunidad por m
       <div className="space-y-4">
         {marketFits.map((fit) => {
           const score = Number(fit.fitScore) || 0
-          const level = fit.opportunityLevel || 'low'
+          const level = fit.opportunityLevel || opportunityLevelForScore(score)
           return (
             <div key={fit.market}>
               <div className="flex items-center justify-between gap-3 mb-1">

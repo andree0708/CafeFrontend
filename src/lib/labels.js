@@ -99,7 +99,33 @@ export const labelDrying = (v) => lookup(DRYING, v)
 export const labelSoil = (v) => lookup(SOIL_TYPES, v)
 export const labelMarket = (v) => MARKET_LABELS[v] || v || '—'
 export const labelOpportunity = (v) => OPPORTUNITY_LABELS[v] || v || '—'
-export const labelFeature = (v) => FEATURE_LABELS[v] || v || '—'
+
+export const opportunityLevelForScore = (score) => {
+  const value = Number(score) || 0
+  if (value >= 75) return 'high'
+  if (value >= 55) return 'medium'
+  return 'low'
+}
+const FEATURE_GROUPS = [
+  'pestControlType',
+  'irrigationType',
+  'dryingMethod',
+  'variety',
+  'processingMethod',
+  'soilType',
+]
+
+export const labelFeature = (v) => {
+  if (!v) return '—'
+  if (FEATURE_LABELS[v]) return FEATURE_LABELS[v]
+  for (const group of FEATURE_GROUPS) {
+    if (v.startsWith(`${group}_`)) {
+      const value = v.slice(group.length + 1)
+      return `${FEATURE_LABELS[group] || group} (${formatFeatureValue(group, value)})`
+    }
+  }
+  return v
+}
 
 const CATEGORICAL_LABELERS = {
   variety: labelVariety,
