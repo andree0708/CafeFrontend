@@ -14,6 +14,8 @@ import FarmDetail from './pages/producer/FarmDetail'
 import Batches from './pages/producer/Batches'
 import BatchDetail from './pages/producer/BatchDetail'
 import Predictions from './pages/producer/Predictions'
+import ModelInfo from './pages/producer/ModelInfo'
+import Compare from './pages/producer/Compare'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProducers from './pages/admin/AdminProducers'
@@ -44,6 +46,8 @@ export default function App() {
           <Route path="/batches" element={<Batches />} />
           <Route path="/batches/:id" element={<BatchDetail />} />
           <Route path="/predictions" element={<Predictions />} />
+          <Route path="/model" element={<ModelInfo />} />
+          <Route path="/compare" element={<Compare />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/producers" element={<AdminProducers />} />

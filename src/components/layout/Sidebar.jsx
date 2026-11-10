@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard, Leaf, Package, BarChart2,
-  Users, Settings, LogOut, Map, ClipboardList,
+  Users, Settings, LogOut, Map, ClipboardList, Cpu, GitCompare,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -11,6 +11,8 @@ const producerNav = [
   { to: '/farms', label: 'Fincas' },
   { to: '/batches', label: 'Lotes' },
   { to: '/predictions', label: 'Análisis' },
+  { to: '/compare', label: 'Comparar' },
+  { to: '/model', label: 'Modelo IA' },
 ]
 
 const adminNav = [
@@ -20,6 +22,8 @@ const adminNav = [
   { to: '/admin/batches', label: 'Lotes' },
   { to: '/admin/predictions', label: 'Análisis' },
   { to: '/admin/reports', label: 'Reportes' },
+  { to: '/compare', label: 'Comparar' },
+  { to: '/model', label: 'Modelo IA' },
 ]
 
 const icons = {
@@ -27,6 +31,8 @@ const icons = {
   '/farms': Leaf,
   '/batches': Package,
   '/predictions': BarChart2,
+  '/compare': GitCompare,
+  '/model': Cpu,
   '/admin': LayoutDashboard,
   '/admin/producers': Users,
   '/admin/farms': Map,
