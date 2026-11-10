@@ -2,53 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Fonts ─────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+
 @layer base {
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    @apply bg-paper text-ink font-sans antialiased;
-  }
-  h1, h2, h3, .font-display {
-    font-family: 'Fraunces', Georgia, serif;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body { @apply bg-paper text-ink font-sans; }
+
+  h1, h2, h3, .font-display { font-family: 'Fraunces', Georgia, serif; }
+
+  /* Warm selection */
+  ::selection { background: #c9956a40; color: #1a110a; }
 }
 
 @layer components {
+
+  /* ── Buttons ──────────────────────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 bg-ink text-paper font-medium px-4 py-2.5 rounded-md text-sm tracking-wide hover:bg-espresso transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2
+           bg-espresso text-paper font-medium
+           px-5 py-2.5 rounded-md text-sm tracking-wide
+           hover:bg-roast active:scale-[0.98]
+           transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
+           shadow-warm-sm;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 bg-transparent text-ink font-medium px-4 py-2.5 rounded-md text-sm border border-line hover:bg-white/70 transition-colors duration-150;
+    @apply inline-flex items-center justify-center gap-2
+           bg-canvas text-ink font-medium
+           px-5 py-2.5 rounded-md text-sm border border-line
+           hover:bg-paper hover:border-muted active:scale-[0.98]
+           transition-all duration-150;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-muted font-medium
+           px-4 py-2 rounded-md text-sm
+           hover:bg-line hover:text-ink
+           transition-all duration-150;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 bg-transparent text-red-800 font-medium px-4 py-2.5 rounded-md text-sm border border-red-200 hover:bg-red-50 transition-colors duration-150;
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-coral-700 font-medium
+           px-5 py-2.5 rounded-md text-sm border border-coral-200
+           hover:bg-coral-50 active:scale-[0.98]
+           transition-all duration-150;
   }
+
+  /* ── Inputs ───────────────────────────────────────────────────────────────── */
   .input-field {
-    @apply w-full bg-white/80 px-3 py-2.5 border border-line rounded-md text-sm text-ink placeholder:text-stone-400 focus:outline-none focus:border-espresso focus:ring-1 focus:ring-espresso/30 transition-colors;
+    @apply w-full bg-canvas px-3.5 py-2.5
+           border border-line rounded-md
+           text-sm text-ink placeholder:text-muted/60
+           focus:outline-none focus:border-crema focus:ring-2 focus:ring-crema/20
+           transition-colors duration-150;
   }
+
+  /* ── Cards ────────────────────────────────────────────────────────────────── */
   .card {
-    @apply bg-panel border border-line rounded-md p-6;
+    @apply bg-panel border border-line rounded-lg p-6 shadow-warm-sm;
   }
+  .card-flat {
+    @apply bg-canvas border border-line rounded-lg p-6;
+  }
+
+  /* ── Typography tokens ────────────────────────────────────────────────────── */
   .page-kicker {
-    @apply text-[11px] uppercase tracking-[0.22em] text-espresso/80 font-medium;
+    @apply text-[11px] uppercase tracking-[0.22em] text-crema font-semibold;
   }
   .page-title {
-    @apply font-display text-3xl md:text-4xl text-ink font-medium tracking-tight;
+    @apply font-display text-3xl md:text-4xl text-ink font-medium tracking-tight leading-[1.1];
   }
+  .section-title {
+    @apply font-display text-xl text-ink;
+  }
+  .label-field {
+    @apply block text-[11px] uppercase tracking-[0.18em] text-muted font-medium mb-1.5;
+  }
+
+  /* ── Badges ───────────────────────────────────────────────────────────────── */
   .badge-specialty {
-    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium tracking-wide bg-emerald-950 text-emerald-50;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-sage-700 text-sage-50;
   }
   .badge-premium {
-    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium tracking-wide bg-ink text-paper;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-roast text-crema;
   }
   .badge-commercial {
-    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium tracking-wide bg-amber-100 text-amber-950;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-amber-100 text-amber-900;
   }
   .badge-low {
-    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium tracking-wide bg-red-100 text-red-900;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-coral-100 text-coral-800;
+  }
+
+  /* ── Misc ─────────────────────────────────────────────────────────────────── */
+  .divider { @apply border-t border-line; }
+  .tag {
+    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium bg-line text-muted tracking-wide;
   }
 }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #cbbba8; border-radius: 8px; }
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #c9956a55; border-radius: 99px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-up { animation: fade-up 0.3s ease both; }
+.animate-fade-in { animation: fade-in 0.2s ease both; }
+
+/* Score ring for SCA score display */
+.score-ring {
+  --score: 0;
+  stroke-dasharray: 251.2;
+  stroke-dashoffset: calc(251.2 * (1 - var(--score) / 100));
+  transition: stroke-dashoffset 1s ease;
+}
