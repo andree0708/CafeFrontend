@@ -6,7 +6,10 @@ import { useToast } from '../../components/ui/Toast'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import { BarChart2, Zap, ChevronRight, CheckCircle2, Clock } from 'lucide-react'
-import { DRYING, IRRIGATION, PEST_CONTROL, labelVariety, labelProcess, dateInputValue } from '../../lib/labels'
+import { DRYING, IRRIGATION, PEST_CONTROL, SOIL_TYPES, labelVariety, labelProcess } from '../../lib/labels'
+import FactorBars from '../../components/ui/FactorBars'
+import MarketBars from '../../components/ui/MarketBars'
+import FallbackNotice from '../../components/ui/FallbackNotice'
 
 const PRIORITY = { high: 'Alta', medium: 'Media', low: 'Baja' }
 const REC_CAT  = { commercialization: 'Mercado', processing: 'Poscosecha', agronomic: 'Agronomía' }
@@ -231,6 +234,16 @@ export default function Predictions() {
                   )}
                 </div>
 
+                <FallbackNotice prediction={prediction} />
+
+                <FactorBars
+                  factors={prediction?.topFactors}
+                  baseline={prediction?.baselineScore ?? prediction?.rawOutput?.baselineScore}
+                  method={prediction?.explanationMethod}
+                />
+
+                <MarketBars marketFits={detail.marketFits} />
+
                 {/* Quick variables form */}
                 <form onSubmit={varsForm.handleSubmit(onSaveVars)} className="card space-y-4">
                   <div className="flex items-center justify-between">
@@ -247,6 +260,15 @@ export default function Predictions() {
                     </VarField>
                     <VarField label="Humedad almacenamiento (%)">
                       <input type="number" step="0.1" min="0" max="100" className="input-field" {...varsForm.register('storageMoisture')} />
+                    </VarField>
+                    <VarField label="Horas de fermentación">
+                      <input type="number" step="1" min="0" max="240" className="input-field" {...varsForm.register('fermentationHours')} />
+                    </VarField>
+                    <VarField label="Tipo de suelo">
+                      <select className="input-field" {...varsForm.register('soilType')}>
+                        <option value="">—</option>
+                        {SOIL_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
                     </VarField>
                     <VarField label="Método de secado">
                       <select className="input-field" {...varsForm.register('dryingMethod')}>
