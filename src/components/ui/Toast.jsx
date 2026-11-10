@@ -1,62 +1,77 @@
-import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react'
-import clsx from 'clsx'
+import { useEffect, useState, useCallback } from 'react'
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 
-const icons = {
-  success: CheckCircle,
-  error: XCircle,
-  warning: AlertCircle,
-}
-
-const styles = {
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-  error: 'bg-red-50 border-red-200 text-red-800',
-  warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+const CONFIG = {
+  success: {
+    icon: CheckCircle2,
+    cls: 'border-sage-300 bg-sage-50 text-sage-800',
+    icon_cls: 'text-sage-600',
+  },
+  error: {
+    icon: XCircle,
+    cls: 'border-coral-200 bg-coral-50 text-coral-800',
+    icon_cls: 'text-coral-600',
+  },
+  warning: {
+    icon: AlertTriangle,
+    cls: 'border-amber-200 bg-amber-50 text-amber-800',
+    icon_cls: 'text-amber-600',
+  },
+  info: {
+    icon: Info,
+    cls: 'border-line bg-canvas text-ink',
+    icon_cls: 'text-crema',
+  },
 }
 
 export function Toast({ message, type = 'success', onClose, duration = 4000 }) {
-  const [visible, setVisible] = useState(true)
-  const Icon = icons[type]
+  const [visible, setVisible] = useState(false)
+  const { icon: Icon, cls, icon_cls } = CONFIG[type] || CONFIG.info
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false)
-      setTimeout(onClose, 300)
-    }, duration)
-    return () => clearTimeout(timer)
+    requestAnimationFrame(() => setVisible(true))
+    const t = setTimeout(() => { setVisible(false); setTimeout(onClose, 300) }, duration)
+    return () => clearTimeout(t)
   }, [duration, onClose])
 
   return (
-    <div
-      className={clsx(
-        'fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg max-w-sm transition-all duration-300',
-        styles[type],
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-      )}
-    >
-      <Icon size={18} className="shrink-0" />
-      <p className="text-sm font-medium">{message}</p>
-      <button onClick={() => { setVisible(false); setTimeout(onClose, 300) }} className="ml-1 hover:opacity-70">
-        <X size={15} />
+    <div className={`
+      fixed bottom-6 right-6 z-50
+      flex items-start gap-3 px-4 py-3
+      rounded-lg border shadow-warm-lg
+      max-w-xs text-sm
+      transition-all duration-300
+      ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+      ${cls}
+    `}>
+      <Icon size={16} className={`${icon_cls} shrink-0 mt-0.5`} />
+      <p className="flex-1 leading-snug">{message}</p>
+      <button onClick={() => { setVisible(false); setTimeout(onClose, 300) }} className="shrink-0 opacity-50 hover:opacity-100">
+        <X size={14} />
       </button>
     </div>
   )
 }
 
-// Simple hook to manage toasts
-import { useCallback } from 'react'
 export function useToast() {
-  const [toast, setToast] = useState(null)
+  const [toasts, setToasts] = useState([])
 
   const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type, id: Date.now() })
+    const id = Date.now()
+    setToasts((prev) => [...prev, { id, message, type }])
   }, [])
 
-  const hideToast = useCallback(() => setToast(null), [])
+  const hideToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
-  const ToastComponent = toast
-    ? <Toast key={toast.id} message={toast.message} type={toast.type} onClose={hideToast} />
-    : null
+  const ToastComponent = (
+    <>
+      {toasts.map((t) => (
+        <Toast key={t.id} message={t.message} type={t.type} onClose={() => hideToast(t.id)} />
+      ))}
+    </>
+  )
 
   return { showToast, ToastComponent }
 }

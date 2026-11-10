@@ -1,14 +1,14 @@
 export default function EmptyState({ icon: Icon, title, body, action }) {
   return (
-    <div className="card text-center py-16 px-6">
+    <div className="card text-center py-20 px-6 animate-fade-up">
       {Icon && (
-        <div className="w-12 h-12 border border-line mx-auto mb-4 flex items-center justify-center">
-          <Icon size={20} className="text-espresso" />
+        <div className="w-14 h-14 rounded-full bg-line mx-auto mb-5 flex items-center justify-center">
+          <Icon size={22} className="text-crema" />
         </div>
       )}
-      <p className="font-display text-xl text-ink mb-1">{title}</p>
-      {body && <p className="text-stone-500 text-sm max-w-sm mx-auto">{body}</p>}
-      {action && <div className="mt-6">{action}</div>}
+      <p className="font-display text-2xl text-ink">{title}</p>
+      {body && <p className="text-muted text-sm max-w-sm mx-auto mt-2 leading-relaxed">{body}</p>}
+      {action && <div className="mt-7">{action}</div>}
     </div>
   )
 }
