@@ -41,12 +41,52 @@ export const DRYING = [
   { value: 'other', label: 'Otro' },
 ]
 
+export const SOIL_TYPES = [
+  { value: 'volcanic', label: 'Volcánico' },
+  { value: 'clay', label: 'Arcilloso' },
+  { value: 'sandy', label: 'Arenoso' },
+  { value: 'loam', label: 'Franco' },
+  { value: 'other', label: 'Otro' },
+]
+
 export const CATEGORY_LABELS = {
   SPECIALTY: 'Especialidad',
   PREMIUM: 'Premium',
   COMMERCIAL: 'Comercial',
   LOW_GRADE: 'Bajo grado',
   PENDING: 'Pendiente',
+}
+
+export const MARKET_LABELS = {
+  specialty: 'Café de especialidad',
+  export: 'Exportación',
+  cafes: 'Cafeterías y consumo',
+  local: 'Mercado local',
+}
+
+export const OPPORTUNITY_LABELS = {
+  high: 'Alta',
+  medium: 'Media',
+  low: 'Baja',
+}
+
+export const FEATURE_LABELS = {
+  avgTemperature: 'Temperatura media',
+  avgRainfall: 'Lluvia anual',
+  avgHumidity: 'Humedad relativa',
+  soilPH: 'pH del suelo',
+  soilOrganicMatter: 'Materia orgánica',
+  soilNitrogen: 'Nitrógeno del suelo',
+  dryingDays: 'Días de secado',
+  storageMoisture: 'Humedad de almacenamiento',
+  altitude: 'Altitud',
+  fermentationHours: 'Horas de fermentación',
+  pestControlType: 'Control de plagas',
+  irrigationType: 'Sistema de riego',
+  dryingMethod: 'Método de secado',
+  variety: 'Variedad',
+  processingMethod: 'Proceso',
+  soilType: 'Tipo de suelo',
 }
 
 const lookup = (list, value) => list.find((i) => i.value === value)?.label || value || '—'
@@ -56,6 +96,52 @@ export const labelProcess = (v) => lookup(PROCESSES, v)
 export const labelPest = (v) => lookup(PEST_CONTROL, v)
 export const labelIrrigation = (v) => lookup(IRRIGATION, v)
 export const labelDrying = (v) => lookup(DRYING, v)
+export const labelSoil = (v) => lookup(SOIL_TYPES, v)
+export const labelMarket = (v) => MARKET_LABELS[v] || v || '—'
+export const labelOpportunity = (v) => OPPORTUNITY_LABELS[v] || v || '—'
+export const labelFeature = (v) => FEATURE_LABELS[v] || v || '—'
+
+const CATEGORICAL_LABELERS = {
+  variety: labelVariety,
+  processingMethod: labelProcess,
+  pestControlType: labelPest,
+  irrigationType: labelIrrigation,
+  dryingMethod: labelDrying,
+  soilType: labelSoil,
+}
+
+export const formatFeatureValue = (feature, value) => {
+  if (value === null || value === undefined || value === '') return '—'
+  const labeler = CATEGORICAL_LABELERS[feature]
+  return labeler ? labeler(value) : String(value)
+}
+
+const parseMaybeJson = (value, fallback) => {
+  if (value === null || value === undefined || value === '') return fallback
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return fallback
+  }
+}
+
+export const normalizePrediction = (prediction) => {
+  if (!prediction) return { status: 'PENDING' }
+  return {
+    ...prediction,
+    topFactors: parseMaybeJson(prediction.topFactors, []),
+    inputFeatures: parseMaybeJson(prediction.inputFeatures, null),
+    rawOutput: parseMaybeJson(prediction.rawOutput, null),
+  }
+}
+
+export const normalizeRun = (run) => ({
+  ...run,
+  topFactors: parseMaybeJson(run.topFactors, []),
+  inputFeatures: parseMaybeJson(run.inputFeatures, null),
+  rawOutput: parseMaybeJson(run.rawOutput, null),
+})
 
 export const formatDate = (value) => {
   if (!value) return '—'
@@ -78,12 +164,18 @@ export const mapFarm = (farm) => ({
   ownerId: farm.producer?.userId ?? farm.producerId,
 })
 
-export const mapBatch = (batch) => ({
-  ...batch,
-  farmName: batch.farm?.name || batch.farmName,
-  prediction: batch.aiPrediction || batch.prediction || { status: 'PENDING' },
-  harvestDate: batch.harvestDate,
-})
+export const mapBatch = (batch) => {
+  const rawPrediction = batch.aiPrediction || batch.prediction || { status: 'PENDING' }
+  const prediction = normalizePrediction(rawPrediction)
+  return {
+    ...batch,
+    farmName: batch.farm?.name || batch.farmName,
+    aiPrediction: prediction,
+    prediction,
+    predictionRuns: (batch.predictionRuns || []).map(normalizeRun),
+    harvestDate: batch.harvestDate,
+  }
+}
 
 export const mapProducer = (p) => ({
   id: p.id,
